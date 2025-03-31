@@ -40,7 +40,7 @@ def login():
                 session.clear()
                 # Set the session to indicate the user is logged in
                 session['user_id'] = str(user['_id'])
-                return make_response(jsonify({'message': f'Welcome back, {user["username"]}! You have successfully logged in.', 'token created': token}), 201)
+                return make_response(jsonify({'message': f'Welcome back, {user["username"]}! You have successfully logged in.', 'token created': token, 'role': user.get("role", "mentee")}), 201)# Return the role
             else:
                 return make_response(jsonify({'message': 'Invalid password. Please try again.'}), 401)
         else:
