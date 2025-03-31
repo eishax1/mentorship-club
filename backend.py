@@ -10,6 +10,7 @@ from decorators.mentor_admin import admin_or_mentor_required
 from decorators.admin import admin_required
 from flask_cors import CORS
 
+
 # App Configuration
 app = Flask(__name__)
 CORS(app)
@@ -129,7 +130,10 @@ def delete_announcement(announcement_id):
 @app.route('/api/v1.0/announcements', methods=['GET'])
 def get_announcements():
     announcements = announcement_collection.find()
-    announcements_list = [{"title": a['title'], "content": a['content'], "created_at": a['created_at']} for a in announcements]
+    announcements_list = [
+        {"_id": str(a['_id']), "title": a['title'], "content": a['content'], "created_at": a['created_at']}
+        for a in announcements
+    ]
     return make_response(jsonify(announcements_list), 200)
 
 #get announcements by id

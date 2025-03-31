@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +7,6 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-
 <body>
 
   <!-- Navbar -->
@@ -35,7 +33,7 @@
   <!-- Login Form -->
   <div id="loginForm" class="container mt-5" style="display: none;">
     <h2>Login</h2>
-    <form id="loginForm">
+    <form id="loginFormElement">
       <div class="mb-3">
         <label for="username" class="form-label">Username</label>
         <input type="text" class="form-control" id="username" required>
@@ -48,27 +46,27 @@
     </form>
   </div>
 
-  <!-- Announcements -->
+  <!-- Announcements Section -->
   <div id="announcements" class="container mt-5" style="display: none;">
     <h2>Announcements</h2>
     <div id="announcementList" class="list-group">
       <!-- Announcements will be dynamically inserted here -->
     </div>
-    
-<!-- Create Announcement Form (Initially Hidden) -->
-<div id="createAnnouncementForm" style="display: none;">
-  <h3>Create Announcement</h3>
-  <div class="mb-3">
-    <label for="announcementTitle" class="form-label">Title</label>
-    <input type="text" class="form-control" id="announcementTitle">
-  </div>
-  <div class="mb-3">
-    <label for="announcementContent" class="form-label">Content</label>
-    <textarea class="form-control" id="announcementContent"></textarea>
-  </div>
-  <button id="createAnnouncementButton" class="btn btn-success">Create Announcement</button>
-</div>
 
+    <!-- Create Announcement Form (Initially Hidden) -->
+    <div id="createAnnouncementForm" style="display: none;" class="mt-4">
+      <h3>Create Announcement</h3>
+      <div class="mb-3">
+        <label for="announcementTitle" class="form-label">Title</label>
+        <input type="text" class="form-control" id="announcementTitle">
+      </div>
+      <div class="mb-3">
+        <label for="announcementContent" class="form-label">Content</label>
+        <textarea class="form-control" id="announcementContent"></textarea>
+      </div>
+      <button id="createAnnouncementButton" class="btn btn-success">Create Announcement</button>
+    </div>
+  </div>
 
   <!-- Bootstrap JS and dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
@@ -79,29 +77,36 @@
     const loginButton = document.getElementById("loginButton");
     const logoutButton = document.getElementById("logoutButton");
     const loginForm = document.getElementById("loginForm");
+    const loginFormElement = document.getElementById("loginFormElement");
     const announcementsSection = document.getElementById("announcements");
     const announcementList = document.getElementById("announcementList");
-    
-    let token = localStorage.getItem('token'); // Check if token is stored in localStorage
+    const createAnnouncementForm = document.getElementById("createAnnouncementForm");
+    const createAnnouncementButton = document.getElementById("createAnnouncementButton");
 
-    // Display login form if user is not logged in
+    // Retrieve token and role from local storage
+    let token = localStorage.getItem('token');
+    let userRole = localStorage.getItem('role');
+
+    // Show login form if not logged in
     if (!token) {
       loginForm.style.display = 'block';
       loginButton.style.display = 'none';
     } else {
       logoutButton.style.display = 'block';
-      loadAnnouncements(); // Load announcements if logged in
+      announcementsSection.style.display = 'block';
+      // Show create announcement form only for admin users
       if (userRole === 'admin') {
-        document.getElementById("createAnnouncementForm").style.display = "block"; // Show form for admins
+        createAnnouncementForm.style.display = 'block';
+      }
+      loadAnnouncements(); // Load announcements if logged in
     }
-  }
+
     // Handle login
-    loginForm.addEventListener('submit', function (event) {
+    loginFormElement.addEventListener('submit', function (event) {
       event.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      // Send login request
       fetch('http://127.0.0.1:5000/api/v1.0/login', {
         method: 'GET',
         headers: {
@@ -113,16 +118,16 @@
         token = data['token created']; // Get token
         userRole = data['role']; // Get user role
         localStorage.setItem('token', token); // Store token in localStorage
-        localStorage.setItem('role', userRole); // Store role in local storage
-        
+        localStorage.setItem('role', userRole); // Store role in localStorage
+
         loginForm.style.display = 'none'; // Hide login form
         announcementsSection.style.display = 'block'; // Show announcements
         loginButton.style.display = 'none'; // Hide login button
         logoutButton.style.display = 'block'; // Show logout button
-        
+
         if (userRole === 'admin') {
-          document.getElementById("createAnnouncementForm").style.display = "block"; // Show form for admins
-    }        
+          createAnnouncementForm.style.display = 'block'; // Show form for admins
+        }
         loadAnnouncements(); // Load announcements
       })
       .catch(() => {
@@ -140,12 +145,12 @@
       })
       .then(() => {
         localStorage.removeItem('token');
-        localStorage.removeItem('role'); // Remove role on logout
+        localStorage.removeItem('role');
         token = null;
         userRole = null;
         loginForm.style.display = 'block';
         announcementsSection.style.display = 'none';
-        document.getElementById("createAnnouncementForm").style.display = "none"; // Hide form on logout
+        createAnnouncementForm.style.display = 'none';
         loginButton.style.display = 'block';
         logoutButton.style.display = 'none';
       })
@@ -154,31 +159,71 @@
       });
     });
 
-    // Load announcements
     function loadAnnouncements() {
-      fetch('http://127.0.0.1:5000/api/v1.0/announcements', {
-        method: 'GET',
-      })
-      .then(response => response.json())
-      .then(announcements => {
-        announcementList.innerHTML = ''; // Clear the previous announcements
-        announcements.forEach(function (announcement) {
-          const li = document.createElement('li');
-          li.classList.add('list-group-item');
-          li.innerHTML = `<strong>${announcement.title}</strong><p>${announcement.content}</p>`;
-          announcementList.appendChild(li);
+  fetch('http://127.0.0.1:5000/api/v1.0/announcements', {
+    method: 'GET',
+  })
+  .then(response => response.json())
+  .then(announcements => {
+    announcementList.innerHTML = ''; // Clear previous announcements
+    announcements.forEach(function (announcement) {
+      const li = document.createElement('li');
+      li.classList.add('list-group-item');
+      li.innerHTML = `
+        <strong>${announcement.title}</strong>
+        <p>${announcement.content}</p>
+        ${userRole === 'admin' ? `<button class="btn btn-danger btn-sm delete-btn" data-id="${announcement._id}">Delete</button>` : ''}
+      `;
+      announcementList.appendChild(li);
+    });
+
+    // Add event listeners to delete buttons (admin only)
+    if (userRole === 'admin') {
+      document.querySelectorAll(".delete-btn").forEach(button => {
+        button.addEventListener("click", function () {
+          const announcementId = this.getAttribute("data-id");
+          if (!announcementId) {
+            console.error("Error: Announcement ID is undefined.");
+            alert("Failed to delete. Announcement ID is missing.");
+            return;
+          }
+          deleteAnnouncement(announcementId);
         });
-      })
-      .catch(() => {
-        alert('Failed to load announcements');
       });
     }
+  })
+  .catch(() => {
+    alert('Failed to load announcements');
+  });
+}
 
-    // Create Announcement
-    document.getElementById("createAnnouncementButton").addEventListener("click", function () {
+
+function deleteAnnouncement(announcement_id) {
+  if (!confirm("Are you sure you want to delete this announcement?")) return;
+
+  fetch(`http://127.0.0.1:5000/api/v1.0/announcements/${announcement_id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "x-access-token": token
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert(data.message);
+    loadAnnouncements(); // Refresh announcements list
+  })
+  .catch(err => {
+    console.error("Error deleting announcement:", err);
+    alert("Failed to delete announcement. Check console for details.");
+  });
+}
+
+
+    // Create announcement (admin only)
+    createAnnouncementButton.addEventListener("click", function () {
       const title = document.getElementById("announcementTitle").value.trim();
       const content = document.getElementById("announcementContent").value.trim();
-      const token = localStorage.getItem("token"); // Retrieve token from localStorage
 
       if (!title || !content) {
         alert("Title and content are required.");
@@ -189,7 +234,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-access-token": token // Send token for authentication
+          "x-access-token": token
         },
         body: JSON.stringify({ title, content })
       })
@@ -204,8 +249,7 @@
         alert("Failed to create announcement: " + error);
       });
     });
-
   </script>
 </body>
-
 </html>
+
